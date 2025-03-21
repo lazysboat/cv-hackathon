@@ -1,0 +1,65 @@
+MASK ANALYSIS DETAILED REPORT
+============================================================
+
+[1] image_1.png
+    Path: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\masks\image_1.png
+    Format: PNG, Mode: 1
+    Dimensions: 2D, Shape: 2D grayscale: 256x256
+    Type: Grayscale 0/1 binary
+    Matching image: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\images\image_1.png
+
+[2] image_100.png
+    Path: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\masks\image_100.png
+    Format: PNG, Mode: 1
+    Dimensions: 2D, Shape: 2D grayscale: 256x256
+    Type: Grayscale 0/1 binary
+    Matching image: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\images\image_100.png
+
+[3] image_1000.png
+    Path: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\masks\image_1000.png
+    Format: PNG, Mode: 1
+    Dimensions: 2D, Shape: 2D grayscale: 256x256
+    Type: Grayscale 0/1 binary
+    Matching image: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\images\image_1000.png
+
+[4] image_10000.png
+    Path: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\masks\image_10000.png
+    Format: PNG, Mode: 1
+    Dimensions: 2D, Shape: 2D grayscale: 256x256
+    Type: Grayscale 0/1 binary
+    Matching image: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\images\image_10000.png
+
+[5] image_10005.png
+    Path: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\masks\image_10005.png
+    Format: PNG, Mode: 1
+    Dimensions: 2D, Shape: 2D grayscale: 256x256
+    Type: Grayscale 0/1 binary
+    Matching image: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train\train\images\image_10005.png
+
+
+RECOMMENDATIONS:
+1. Convert RGB masks to grayscale binary (black and white) format
+   The following masks need conversion:
+   - image_0.png
+   - image_10.png
+   - image_10001.png
+   - image_10002.png
+   - image_10003.png
+   - ... and 10 more
+
+3. Fix or regenerate the following problematic masks:
+   - image_0.png
+   - image_10.png
+   - image_10001.png
+   - image_10002.png
+   - image_10003.png
+   - image_10004.png
+   - image_10006.png
+   - image_10007.png
+   - image_10008.png
+   - image_10009.png
+   - image_1001.png
+   - image_10010.png
+   - image_10011.png
+   - image_10012.png
+   - image_10013.png

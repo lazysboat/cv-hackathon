@@ -2,12 +2,24 @@ import os
 import argparse
 import numpy as np
 import torch
-from tqdm import tqdm
+# Remove tqdm dependency
+# from tqdm import tqdm
 
 # Import our modules
 from models.unet import UNet
 from dataset import get_test_loader
 from utils import post_process_mask, save_predictions_to_csv
+
+
+# Simple progress indicator
+def progress_print(current, total, message=""):
+    """Simple progress indicator"""
+    bar_length = 30
+    filled_length = int(bar_length * current // total)
+    bar = '█' * filled_length + '-' * (bar_length - filled_length)
+    print(f'\r{message} |{bar}| {current}/{total}', end='')
+    if current == total:
+        print()
 
 
 def predict_masks(model, test_loader, device, threshold=0.5, post_process=True, min_size=30):
@@ -30,8 +42,11 @@ def predict_masks(model, test_loader, device, threshold=0.5, post_process=True, 
     filenames = []
     predicted_masks = []
     
+    print("Generating predictions...")
+    total_batches = len(test_loader)
+    
     with torch.no_grad():
-        for batch in tqdm(test_loader, desc="Generating predictions"):
+        for batch_idx, batch in enumerate(test_loader):
             images = batch["image"].to(device)
             batch_filenames = batch["filename"]
             
@@ -60,6 +75,9 @@ def predict_masks(model, test_loader, device, threshold=0.5, post_process=True, 
                     from PIL import Image
                     mask_img = Image.fromarray(mask_image)
                     mask_img.save(os.path.join(args.output_masks_dir, filename))
+            
+            # Update progress
+            progress_print(batch_idx + 1, total_batches, "Processing batches")
     
     return filenames, predicted_masks
 

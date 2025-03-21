@@ -1,6 +1,7 @@
 # Dataset directories
 Yolov11/train/
 Yolov11/test/
+FromScratch/data/val/
 
 # Model weights
 *.pt

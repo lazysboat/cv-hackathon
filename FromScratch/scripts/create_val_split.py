@@ -2,7 +2,6 @@ import os
 import argparse
 import random
 import shutil
-from tqdm import tqdm
 
 def create_validation_split(
     train_images_dir,
@@ -44,7 +43,13 @@ def create_validation_split(
     
     # Move validation files
     print("Creating validation split...")
-    for filename in tqdm(val_files):
+    
+    # Replace tqdm with simple counter
+    for i, filename in enumerate(val_files):
+        # Print progress every 100 files
+        if i % 100 == 0:
+            print(f"Progress: {i}/{num_val} files processed")
+            
         # Move image
         src_img = os.path.join(train_images_dir, filename)
         dst_img = os.path.join(val_images_dir, filename)
