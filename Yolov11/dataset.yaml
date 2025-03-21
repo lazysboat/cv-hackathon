@@ -1,0 +1,7 @@
+masks_path: train\masks
+names:
+  0: object
+path: C:\Users\Siyar\Desktop\GEK\Aaltoes CV Hackathon\cv-hackathon\Yolov11\train
+test: null
+train: train\images
+val: train\images

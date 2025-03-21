@@ -1,0 +1,43 @@
+# Dataset directories
+Yolov11/train/
+Yolov11/test/
+
+# Model weights
+*.pt
+*.pth
+*.onnx
+*.engine
+
+# Environment and cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.venv
+env/
+venv/
+ENV/
+ai_detector_env/
+
+# Training logs and results
+runs/
+logs/
+results/
+
+# Image files in root directory (test images)
+/*.png
+/*.jpg
+/*.jpeg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db 

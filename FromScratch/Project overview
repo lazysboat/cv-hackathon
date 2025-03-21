@@ -1,0 +1,129 @@
+Absolutely! Here's your updated and comprehensive **Project Overview & Plan**, tailored to your specific dataset and requirements for the AaltoES 2025 Computer Vision Hackathon.
+
+---
+
+## 🧠 Project Overview: AI Manipulation Detection via Segmentation
+
+### 🎯 Goal:
+Detect and segment regions in images that have been manipulated by AI using a deep learning segmentation model. The model outputs a **binary mask**, where each pixel is classified as:
+- `0` = Not manipulated (real)
+- `1` = AI-generated or edited (fake)
+
+### 📈 Output:
+- A CSV file with each row containing:
+  - `image_id`
+  - `predicted mask` in **RLE (Run-Length Encoding)** format
+
+---
+
+## 📁 Updated Dataset Structure
+
+```
+dataset/
+│
+├── train/
+│   ├── images/            # 15,000 manipulated images
+│   ├── masks/             # 15,000 binary masks (white = AI-touched, black = untouched)
+│
+├── test/
+│   └── images/            # 18,735 manipulated test images (no ground truth)
+```
+
+- **Image resolution**: 256x256
+- **Mask format**: White (pixel value 255) = manipulated region = `1`, Black (0) = unedited = `0`
+
+---
+
+## 🔧 Project Structure
+
+```
+ai-manipulation-detector/
+│
+├── data/                          # Dataset links or symbolic links
+│
+├── scripts/
+│   ├── train.py                  # Training pipeline
+│   ├── infer.py                 # Inference & RLE encoding
+│   ├── utils.py                 # Helper functions (RLE encoder, mask postprocessing)
+│
+├── models/
+│   └── model_weights.pth         # Saved model weights
+│
+├── outputs/
+│   ├── predicted_masks/         # Binary mask outputs from inference
+│   └── submission.csv           # Final CSV for submission
+│
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## 🏗️ Model Recommendation
+
+Since manipulated areas can be **circles, squares, or abstract forms**, you need a **general-purpose segmentation model** with high spatial resolution. Here are top choices:
+
+| Model        | Notes                                                                 |
+|--------------|----------------------------------------------------------------------|
+| **U-Net**    | Lightweight, fast to train, easy to implement. Good baseline.        |
+| **DeepLabV3+** | Strong performance, better edge segmentation, but heavier model.    |
+| **SegFormer (optional)** | New transformer-based model with strong generalization. More complex. |
+
+📌 **Start with U-Net**, then optionally try DeepLabV3+ later if time allows.
+
+---
+
+## 🧪 Loss Function
+
+Use a **combo of losses** for better performance:
+- **Binary Cross Entropy (BCE)** + **Dice Loss**
+
+This combination helps the model focus both on pixel-wise accuracy and region overlap.
+
+---
+
+## 📊 Evaluation Metric
+
+- **Dice Coefficient** (provided by competition)
+- You can also monitor **IoU (Intersection over Union)** during training as a helper metric
+
+---
+
+## 📦 Submission Format (RLE)
+
+- Required format:  
+```csv
+image_id, rle_mask
+00001.png, 4 7 100 10 200 8 ...
+00002.png, 1 5 90 12 ...
+```
+
+- You need to encode each predicted mask using **Run-Length Encoding (RLE)** and output the CSV.
+
+---
+
+## 🚀 Full Project Pipeline Summary
+
+### 1. **Training Phase**
+- Load images + masks
+- Train segmentation model (U-Net or similar)
+- Monitor Dice loss (optional: save best model checkpoints)
+
+### 2. **Inference Phase**
+- Load trained model
+- Predict masks for all `test/images/`
+- Postprocess masks (e.g., thresholding if output is probabilistic)
+- Convert masks → RLE format
+- Write `submission.csv`
+
+---
+
+## ✅ Optional Improvements (if time allows)
+- Use TTA (Test Time Augmentation)
+- Use image augmentations (rotation, flip, noise) during training
+- Try different models (e.g., DeepLabV3+, SegFormer)
+- Ensembling (combine multiple model predictions)
+
+---
+
+Would you like me to now help you define a **specific training plan for U-Net**, or give you a short high-level **to-do checklist** so you can proceed smoothly?

@@ -1,0 +1,6 @@
+torch>=1.9.0
+transformers>=4.20.0
+pillow>=8.0.0
+tqdm>=4.62.0
+numpy>=1.19.0
+# Note: tkinter is included with Python's standard library, so it doesn't need to be installed separately 
