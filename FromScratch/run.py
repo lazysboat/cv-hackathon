@@ -1,6 +1,10 @@
 import os
 import argparse
 import subprocess
+import sys
+
+# Use python3 if on Linux/Unix, python otherwise
+PYTHON_CMD = 'python3' if sys.platform in ('linux', 'linux2', 'darwin') else 'python'
 
 def setup_directories():
     """Set up required directories if they don't exist"""
@@ -21,7 +25,7 @@ def create_val_split(args):
     """Create validation split from training data"""
     print("\n=== Creating Validation Split ===")
     cmd = [
-        "python", "scripts/create_val_split.py",
+        PYTHON_CMD, "scripts/create_val_split.py",
         "--train-images", args.train_images,
         "--train-masks", args.train_masks,
         "--val-images", "data/val/images",
@@ -35,23 +39,50 @@ def create_val_split(args):
 def train_model(args):
     """Train the model"""
     print("\n=== Training Model ===")
-    cmd = [
-        "python", "scripts/train.py",
-        "--train-images", args.train_images,
-        "--train-masks", args.train_masks,
-        "--val-images", "data/val/images",
-        "--val-masks", "data/val/masks",
-        "--epochs", str(args.epochs),
-        "--batch-size", str(args.batch_size),
-        "--learning-rate", str(args.learning_rate),
-        "--img-size", str(args.img_size),
-        "--num-workers", str(args.num_workers),
-        "--seed", str(args.seed),
-        "--dice-weight", str(args.dice_weight),
-        "--bce-weight", str(args.bce_weight),
-        "--checkpoint-dir", "models",
-        "--tensorboard-dir", "logs"
-    ]
+    
+    # Use enhanced model if requested
+    if args.enhanced:
+        cmd = [
+            PYTHON_CMD, "train_enhanced.py",
+            "--train-images", args.train_images,
+            "--train-masks", args.train_masks,
+            "--val-images", "data/val/images",
+            "--val-masks", "data/val/masks",
+            "--epochs", str(args.epochs),
+            "--batch-size", str(args.batch_size),
+            "--learning-rate", str(args.learning_rate),
+            "--dropout", str(args.dropout),
+            "--weight-decay", str(args.weight_decay),
+            "--optimizer", args.optimizer,
+            "--img-size", str(args.img_size),
+            "--num-workers", str(args.num_workers),
+            "--seed", str(args.seed),
+            "--scheduler", args.scheduler,
+            "--dice-weight", str(args.dice_weight),
+            "--bce-weight", str(args.bce_weight),
+            "--checkpoint-dir", "models",
+            "--tensorboard-dir", "logs"
+        ]
+    else:
+        # Use original training script
+        cmd = [
+            PYTHON_CMD, "scripts/train.py",
+            "--train-images", args.train_images,
+            "--train-masks", args.train_masks,
+            "--val-images", "data/val/images",
+            "--val-masks", "data/val/masks",
+            "--epochs", str(args.epochs),
+            "--batch-size", str(args.batch_size),
+            "--learning-rate", str(args.learning_rate),
+            "--img-size", str(args.img_size),
+            "--num-workers", str(args.num_workers),
+            "--seed", str(args.seed),
+            "--dice-weight", str(args.dice_weight),
+            "--bce-weight", str(args.bce_weight),
+            "--checkpoint-dir", "models",
+            "--tensorboard-dir", "logs"
+        ]
+    
     subprocess.run(cmd)
 
 
@@ -59,7 +90,7 @@ def run_inference(args):
     """Run inference on test set"""
     print("\n=== Running Inference ===")
     cmd = [
-        "python", "scripts/infer.py",
+        PYTHON_CMD, "scripts/infer.py",
         "--test-images", args.test_images,
         "--checkpoint", "models/best_model.pth",
         "--batch-size", str(args.batch_size),
@@ -68,6 +99,14 @@ def run_inference(args):
         "--threshold", str(args.threshold),
         "--output-csv", "outputs/submission.csv"
     ]
+    
+    # Pass model type if using enhanced model
+    if args.enhanced:
+        cmd.extend(["--model-type", "enhanced", "--dropout", str(args.dropout)])
+    
+    # Add auto-detect model flag if specified
+    if args.auto_detect_model:
+        cmd.append("--auto-detect-model")
     
     if args.post_process:
         cmd.append("--post-process")
@@ -109,13 +148,17 @@ if __name__ == "__main__":
                         help="Train the model")
     parser.add_argument("--inference", action="store_true",
                         help="Run inference on test set")
+    parser.add_argument("--enhanced", action="store_true",
+                        help="Use the enhanced U-Net model with attention and residual connections")
+    parser.add_argument("--auto-detect-model", action="store_true",
+                        help="Automatically detect model type from checkpoint during inference")
     
     # Data paths
-    parser.add_argument("--train-images", type=str, default="../Yolov11/train/train/images",
+    parser.add_argument("--train-images", type=str, default="../train/train/images",
                         help="Path to training images directory")
-    parser.add_argument("--train-masks", type=str, default="../Yolov11/train/train/masks",
+    parser.add_argument("--train-masks", type=str, default="../train/train/masks",
                         help="Path to training masks directory")
-    parser.add_argument("--test-images", type=str, default="../Yolov11/test/test/images",
+    parser.add_argument("--test-images", type=str, default="../test/test/images",
                         help="Path to test images directory")
     
     # Training parameters
@@ -133,6 +176,18 @@ if __name__ == "__main__":
                         help="Random seed for reproducibility")
     parser.add_argument("--val-ratio", type=float, default=0.2,
                         help="Proportion of data to use for validation (0.0-1.0)")
+    
+    # Enhanced model parameters
+    parser.add_argument("--dropout", type=float, default=0.1,
+                        help="Dropout probability for enhanced model")
+    parser.add_argument("--weight-decay", type=float, default=1e-5,
+                        help="Weight decay for optimizer")
+    parser.add_argument("--optimizer", type=str, default="adamw",
+                        choices=["adam", "adamw"],
+                        help="Optimizer type (adam or adamw)")
+    parser.add_argument("--scheduler", type=str, default="cosine",
+                        choices=["step", "cosine", "reduce", "none"],
+                        help="Learning rate scheduler type")
     
     # Loss function weights
     parser.add_argument("--dice-weight", type=float, default=0.5,

@@ -6,8 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-# Remove tqdm dependency
-# from tqdm import tqdm
+from tqdm import tqdm
 import random
 
 # Import our modules
@@ -24,20 +23,6 @@ def seed_everything(seed=42):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-
-
-# Simple progress bar replacement
-def progress_print(current, total, message="", metrics=None):
-    """Simple progress indicator"""
-    bar_length = 30
-    filled_length = int(bar_length * current // total)
-    bar = '█' * filled_length + '-' * (bar_length - filled_length)
-    metrics_str = ""
-    if metrics:
-        metrics_str = " | " + " | ".join([f"{k}: {v:.4f}" for k, v in metrics.items()])
-    print(f'\r{message} |{bar}| {current}/{total}{metrics_str}', end='')
-    if current == total:
-        print()
 
 
 class Trainer:
@@ -79,13 +64,10 @@ class Trainer:
         epoch_loss = 0.0
         epoch_dice = 0.0
         
-        # Progress bar replacement
-        print(f"Training Epoch {epoch}")
+        # Progress bar
+        pbar = tqdm(self.train_loader, desc=f"Training Epoch {epoch}")
         
-        # Get total batch count
-        total_batches = len(self.train_loader)
-        
-        for batch_idx, batch in enumerate(self.train_loader):
+        for batch_idx, batch in enumerate(pbar):
             # Get data
             images = batch["image"].to(self.device)
             masks = batch["mask"].unsqueeze(1).to(self.device)  # Add channel dimension
@@ -111,7 +93,7 @@ class Trainer:
                 epoch_dice += dice
             
             # Update progress bar
-            progress_print(batch_idx + 1, total_batches, "Training", {"loss": loss.item(), "dice": dice})
+            pbar.set_postfix(loss=loss.item(), dice=dice)
         
         # Calculate average metrics
         avg_loss = epoch_loss / len(self.train_loader)
@@ -136,15 +118,12 @@ class Trainer:
         val_loss = 0.0
         val_dice = 0.0
         
-        # Print a header
-        print(f"Validation Epoch {epoch}")
-        
-        # Get total batch count
-        total_batches = len(self.val_loader)
-        
         # Disable gradients
         with torch.no_grad():
-            for batch_idx, batch in enumerate(self.val_loader):
+            # Progress bar
+            pbar = tqdm(self.val_loader, desc=f"Validation Epoch {epoch}")
+            
+            for batch_idx, batch in enumerate(pbar):
                 # Get data
                 images = batch["image"].to(self.device)
                 masks = batch["mask"].unsqueeze(1).to(self.device)  # Add channel dimension
@@ -162,7 +141,7 @@ class Trainer:
                 val_dice += dice
                 
                 # Update progress bar
-                progress_print(batch_idx + 1, total_batches, "Validation", {"loss": loss.item(), "dice": dice})
+                pbar.set_postfix(loss=loss.item(), dice=dice)
         
         # Calculate average metrics
         avg_loss = val_loss / len(self.val_loader)
@@ -284,9 +263,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train U-Net for AI Manipulation Detection")
     
     # Data paths
-    parser.add_argument("--train-images", type=str, default="../Yolov11/train/train/images",
+    parser.add_argument("--train-images", type=str, default="../train/train/images",
                         help="Path to training images directory")
-    parser.add_argument("--train-masks", type=str, default="../Yolov11/train/train/masks",
+    parser.add_argument("--train-masks", type=str, default="../train/train/masks",
                         help="Path to training masks directory")
     parser.add_argument("--val-images", type=str, default=None,
                         help="Path to validation images directory (optional)")

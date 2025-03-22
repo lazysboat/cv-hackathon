@@ -7,6 +7,12 @@ import torch
 
 # Import our modules
 from models.unet import UNet
+try:
+    from models.unet_enhanced import UNetEnhanced
+    HAS_ENHANCED_MODEL = True
+except ImportError:
+    HAS_ENHANCED_MODEL = False
+    
 from dataset import get_test_loader
 from utils import post_process_mask, save_predictions_to_csv
 
@@ -82,6 +88,40 @@ def predict_masks(model, test_loader, device, threshold=0.5, post_process=True, 
     return filenames, predicted_masks
 
 
+def detect_model_type(checkpoint):
+    """
+    Detect whether the checkpoint was trained with standard UNet or enhanced UNet
+    by examining the keys in the state dictionary
+    
+    Args:
+        checkpoint (dict): Loaded model checkpoint
+        
+    Returns:
+        str: 'standard' or 'enhanced'
+    """
+    keys = list(checkpoint["model_state_dict"].keys())
+    
+    # Check for enhanced model keys (inc.0.double_conv or inc.channel_attention)
+    enhanced_indicators = ['inc.0.', 'channel_attention', 'spatial_attention', 'residual']
+    standard_indicators = ['inc.double_conv.0.weight', 'down1.maxpool_conv.1.double_conv.0.weight']
+    
+    # Check if any enhanced model indicators are present
+    for key in keys:
+        for indicator in enhanced_indicators:
+            if indicator in key:
+                return 'enhanced'
+    
+    # Check for standard model indicators
+    for key in keys:
+        for indicator in standard_indicators:
+            if key == indicator:
+                return 'standard'
+    
+    # Default to standard if can't determine
+    print("WARNING: Could not definitively detect model type from checkpoint. Defaulting to standard UNet.")
+    return 'standard'
+
+
 def main(args):
     # Create output directories
     os.makedirs(args.output_masks_dir, exist_ok=True)
@@ -91,13 +131,41 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    # Initialize model
-    model = UNet(n_channels=3, n_classes=1, bilinear=True)
-    
-    # Load trained weights
+    # Load checkpoint first to determine model type
     print(f"Loading model from {args.checkpoint}")
     checkpoint = torch.load(args.checkpoint, map_location=device)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    
+    # Auto-detect model type from checkpoint if not explicitly specified or if mismatch
+    if args.auto_detect_model:
+        detected_model_type = detect_model_type(checkpoint)
+        if args.model_type != detected_model_type:
+            print(f"Auto-detected model type '{detected_model_type}' differs from specified '{args.model_type}'")
+            print(f"Using auto-detected model type: {detected_model_type}")
+            args.model_type = detected_model_type
+    
+    # Initialize model based on detected or specified type
+    if args.model_type == 'enhanced' and HAS_ENHANCED_MODEL:
+        print("Using Enhanced UNet model with attention")
+        model = UNetEnhanced(n_channels=3, n_classes=1, bilinear=True, dropout_p=args.dropout)
+    else:
+        if args.model_type == 'enhanced' and not HAS_ENHANCED_MODEL:
+            print("Enhanced model requested but not available. Falling back to standard UNet.")
+        else:
+            print("Using standard UNet model")
+        model = UNet(n_channels=3, n_classes=1, bilinear=True)
+    
+    # Load weights
+    try:
+        model.load_state_dict(checkpoint["model_state_dict"])
+        print("Model weights loaded successfully")
+    except RuntimeError as e:
+        print(f"Error loading model weights: {e}")
+        if args.auto_detect_model:
+            print("Error despite auto-detection. This might indicate a custom or modified model architecture.")
+        else:
+            print("Try using --auto-detect-model flag to automatically detect the correct model architecture")
+        return
+    
     model = model.to(device)
     
     # Print model information
@@ -139,10 +207,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate predictions for AI Manipulation Detection")
     
     # Data paths
-    parser.add_argument("--test-images", type=str, default="../Yolov11/test/test/images",
+    parser.add_argument("--test-images", type=str, default="test/images",
                         help="Path to test images directory")
-    parser.add_argument("--checkpoint", type=str, default="../models/best_model.pth",
+    parser.add_argument("--checkpoint", type=str, default="models/best_model.pth",
                         help="Path to model checkpoint")
+    
+    # Model type
+    parser.add_argument("--model-type", type=str, default="standard",
+                        choices=["standard", "enhanced"],
+                        help="Type of UNet model to use (standard or enhanced)")
+    parser.add_argument("--auto-detect-model", action="store_true",
+                        help="Automatically detect model type from checkpoint")
+    parser.add_argument("--dropout", type=float, default=0.1,
+                        help="Dropout probability for enhanced model (ignored for standard model)")
     
     # Inference parameters
     parser.add_argument("--batch-size", type=int, default=32,
@@ -161,11 +238,11 @@ if __name__ == "__main__":
                         help="Minimum size of regions to keep during post-processing")
     
     # Output paths
-    parser.add_argument("--output-csv", type=str, default="../outputs/submission.csv",
+    parser.add_argument("--output-csv", type=str, default="outputs/submission.csv",
                         help="Path to output CSV file")
     parser.add_argument("--save-masks", action="store_true",
                         help="Save predicted masks as images")
-    parser.add_argument("--output-masks-dir", type=str, default="../outputs/predicted_masks",
+    parser.add_argument("--output-masks-dir", type=str, default="outputs/predicted_masks",
                         help="Directory to save predicted mask images")
     
     args = parser.parse_args()
